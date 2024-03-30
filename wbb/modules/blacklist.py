@@ -32,66 +32,66 @@ from wbb.core.decorators.errors import capture_err
 from wbb.core.decorators.permissions import adminsOnly
 from wbb.modules.admin import list_admins
 from wbb.utils.dbfunctions import (
-    delete_blacklist_filter,
-    get_blacklisted_words,
-    save_blacklist_filter,
+    delete_bl_filter,
+    get_bll_words,
+    save_bl_filter,
 )
-from wbb.utils.filter_groups import blacklist_filters_group
+from wbb.utils.filter_groups import bl_filters_group
 
-__MODULE__ = "Blacklist"
+__MODULE__ = "bl"
 __HELP__ = """
-/blacklisted - Get All The Blacklisted Words In The Chat.
-/blacklist [WORD|SENTENCE] - Blacklist A Word Or A Sentence.
-/whitelist [WORD|SENTENCE] - Whitelist A Word Or A Sentence.
+/bll - Get All The bll Words In The Chat.
+/bl [WORD|SENTENCE] - bl A Word Or A Sentence.
+/wl [WORD|SENTENCE] - wl A Word Or A Sentence.
 """
 
 
-@app.on_message(filters.command("blacklist") & ~filters.private)
+@app.on_message(filters.command("bl") & ~filters.private)
 @adminsOnly("can_restrict_members")
 async def save_filters(_, message):
     if len(message.command) < 2:
-        return await message.reply_text("Usage:\n/blacklist [WORD|SENTENCE]")
+        return await message.reply_text("Usage:\n/bl [WORD|SENTENCE]")
     word = message.text.split(None, 1)[1].strip()
     if not word:
         return await message.reply_text(
-            "**Usage**\n__/blacklist [WORD|SENTENCE]__"
+            "**Usage**\n__/bl [WORD|SENTENCE]__"
         )
     chat_id = message.chat.id
-    await save_blacklist_filter(chat_id, word)
-    await message.reply_text(f"__**Blacklisted {word}.**__")
+    await save_bl_filter(chat_id, word)
+    await message.reply_text(f"__**bll {word}.**__")
 
 
-@app.on_message(filters.command("blacklisted") & ~filters.private)
+@app.on_message(filters.command("bll") & ~filters.private)
 @capture_err
 async def get_filterss(_, message):
-    data = await get_blacklisted_words(message.chat.id)
+    data = await get_bll_words(message.chat.id)
     if not data:
-        await message.reply_text("**No blacklisted words in this chat.**")
+        await message.reply_text("**No bll words in this chat.**")
     else:
-        msg = f"List of blacklisted words in {message.chat.title} :\n"
+        msg = f"List of bll words in {message.chat.title} :\n"
         for word in data:
             msg += f"**-** `{word}`\n"
         await message.reply_text(msg)
 
 
-@app.on_message(filters.command("whitelist") & ~filters.private)
+@app.on_message(filters.command("wl") & ~filters.private)
 @adminsOnly("can_restrict_members")
 async def del_filter(_, message):
     if len(message.command) < 2:
-        return await message.reply_text("Usage:\n/whitelist [WORD|SENTENCE]")
+        return await message.reply_text("Usage:\n/wl [WORD|SENTENCE]")
     word = message.text.split(None, 1)[1].strip()
     if not word:
-        return await message.reply_text("Usage:\n/whitelist [WORD|SENTENCE]")
+        return await message.reply_text("Usage:\n/wl [WORD|SENTENCE]")
     chat_id = message.chat.id
-    deleted = await delete_blacklist_filter(chat_id, word)
+    deleted = await delete_bl_filter(chat_id, word)
     if deleted:
-        return await message.reply_text(f"**Whitelisted {word}.**")
-    await message.reply_text("**No such blacklist filter.**")
+        return await message.reply_text(f"**wll {word}.**")
+    await message.reply_text("**No such bl filter.**")
 
 
-@app.on_message(filters.text & ~filters.private, group=blacklist_filters_group)
+@app.on_message(filters.text & ~filters.private, group=bl_filters_group)
 @capture_err
-async def blacklist_filters_re(_, message):
+async def bl_filters_re(_, message):
     text = message.text.lower().strip()
     if not text:
         return
@@ -101,7 +101,7 @@ async def blacklist_filters_re(_, message):
         return
     if user.id in SUDOERS:
         return
-    list_of_filters = await get_blacklisted_words(chat_id)
+    list_of_filters = await get_bll_words(chat_id)
     for word in list_of_filters:
         pattern = r"( |^|[^\w])" + re.escape(word) + r"( |$|[^\w])"
         if re.search(pattern, text, flags=re.IGNORECASE):
@@ -119,5 +119,5 @@ async def blacklist_filters_re(_, message):
             return await app.send_message(
                 chat_id,
                 f"Muted {user.mention} [`{user.id}`] for 1 hour "
-                + f"due to a blacklist match on {word}.",
+                + f"due to a bl match on {word}.",
             )
